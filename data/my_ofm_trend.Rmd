@@ -1,0 +1,54 @@
+---
+title: "OFM Population Estimates"
+output: 
+  html_document: 
+    theme: cerulean
+    css: styles.css
+    toc: TRUE
+    toc_float: TRUE
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+
+# This code "chunk" contains all the libraries/packages that are used in the overall script as well basic inputs that we might want to change
+
+# Packages for Data Cleaning/Processing
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(openxlsx)
+
+# Packages for Table and Chart creation
+library(ggplot2)
+library(scales)
+library(plotly)
+
+# Packages used to create markdown document (needed to knit children)
+library(knitr)
+
+# Some basic variables that will be used by the script
+psrc_counties <- c("King","Kitsap","Pierce","Snohomish")
+
+ofm.url <- 'https://www.ofm.wa.gov/sites/default/files/public/dataresearch/pop/april1/ofm_april1_population_final.xlsx'
+
+# Read in Functions and color palette
+source(file.path(getwd() , 'functions.R'))
+source(file.path(getwd() , 'psrc_palette.R'))
+
+```
+
+The data summarized in this document is pulled directly from the Washington State Office of Financial Management (OFM). RCW 43.62.030 states that OFM shall annually determine the April 1 populations of all cities and towns of the state.  OFM population estimates for cities and towns are used in state program administration and in the allocation of selected state revenues (RCW 43.62.020).  Population estimates for counties are used to allocate revenues as specified in RCW 36.13.100 and RCW 43.62.030. The dataset used in the following summary can be downloaded [here](`r toString(ofm.url)`). 
+<br><br>
+![](owensbeachptdefiance.jpg){width=100%}
+<br><br>
+This document was created using R Markdown. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+```{r}
+
+# Let's do this part together!
+
+```
+
+# Contact Us
+If you have any questions about this data or would like to know more, please don't hesitate to contact us at <library@psrc.org>.
