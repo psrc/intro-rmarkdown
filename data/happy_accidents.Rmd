@@ -2,7 +2,7 @@
 title: "Happy Accidents"
 output: 
   html_document:
-    theme: readable
+    theme: cerulean
     toc: true
     toc_depth: 5
     toc_float: true
@@ -10,6 +10,8 @@ output:
 ---
 
 Welcome to my Happy Little World. Let's build something together.
+
+# My Favorite Painter
 
 ```{r setup, echo=TRUE}
 
@@ -19,51 +21,15 @@ include_graphics(happy_accidents)
 
 ```
 
-Syntax in your Markdown document is used to "encode" or build your page. Let's start with **headings**. Wait - notice that **bold**, why did that happen? Because the characters before and after the word tell the encoder that you want the text to be **bold**!
-
-What about Headings - they are defined by the "#" sign
-
-# Heading 1 
-For a PSRC data example, think *Regional Summary*
-
-## Heading 2
-Next level down, how about *County Summary*
-
-### Heading #3
-Next level, how about *Regional Geographies by County*
-
-Wait - why are things randomly *italicized*? You guessed it, it is that magic "*" 
-
-Even though size and color changes with headings, never use headers for their looks - they define things including chapters in a table of contents. If you want a good list of markdown syntax in R, use the cheatsheet that is accessible with *Help - Cheatsheets - R Markdown Cheatsheet*.
-
-
-```{r fig.cap = "<b><i>image from Pinterest</b></i>", fig.align='center',include=FALSE}
-include_graphics(happy_accidents)
-```
-
-Where the heck is my picture? It is left out because **include** is FALSE. Let's try the same thing using **echo=FALSE**
-
-```{r fig.cap = "<b><i>image from Pinterest</b></i>", fig.align='center',echo=FALSE}
-include_graphics(happy_accidents)
-```
-
-There is Bob again, things are right in the world!
-
-Let's look at one last useful feature in text before we move along. What if you want the text to be responsive to a change in a variable? Let's try this.
-
+# My Favorite Year
 ```{r echo=TRUE}
 
-last.year <- "I hate 2020!"
-this.year <- "Things are slowly getting better in 2021!"
+last.year <- "I hate 2020"
+this.year <- "things will be better in 2021!"
 
 ```
 
-To show the text **inline** is done with:
-`r last.year` but **`r this.year`**
+`r last.year` but I know that **`r this.year`**
 
-Bet you ended up with the text on one line - to add a break in markdown, put **2** spaces at the end of a sentence:
-
-To show the text **inline** is done with:  
-`r last.year` but **`r this.year`**
-
+# Let's Move On
 Enough with this world - let's get to the OFM data!

@@ -2,7 +2,7 @@
 title: "Happy Accidents"
 output: 
   html_document:
-    theme: readable
+    theme: cerulean
     toc: true
     toc_depth: 5
     toc_float: true
@@ -34,8 +34,45 @@ There are many chunk options but the most used for me are **include** and **echo
 
 When we run the chunk above, we should see this:
 
-```{r setup, echo=FALSE}
+```{r setup, echo=TRUE}
 library(knitr)
 happy_accidents <- file.path(getwd() ,'bob-ross.jfif')
 include_graphics(happy_accidents)
 ```
+
+# In-Line Text
+One of the biggest differences between R Markdown and the scripts you have written so far is that your scripts did analysis and created output but text descriptions were never included. Markdown can create a document full of text, images, graphics, maps. etc. that you can re-create. The power comes in the fact that the code is run on your data every time the document is rendered so if the data updates, so does your document! The text can be static but it can also be responsive to your code chunks.
+
+## Basic Formatting
+Syntax in your Markdown document is used to "encode" or build your page. 
+
+### Headings
+Let's start with **headings**. Headings are defined by the `#` sign and can range from Level 1 to Level 6, although I rarely go beyond Level 4 in my documents. Here is an example of how to define a few headings.
+
+![](3_happy_accidents_heading_styles.png){width=100%}
+
+Even though size and color changes with headings, never use headers for their looks - they define things including chapters in a table of contents. 
+
+### Text Formats
+The most useful formats I find to use on text include **bold**, *italics* and hyperlinks.
+
+![](4_happy_accidents_formats.png){width=50%}  
+
+
+**Bold**  
+*Italics*  
+<https://www.psrc.org/>  
+
+If you want a list of markdown syntax in R, use the cheatsheet that is accessible with `Help - Cheatsheets - R Markdown Cheatsheet`.
+
+Let's wrap up our example with with some basic text to add to our webpage.
+
+```{r echo=TRUE}
+
+last.year <- "I hated 2020"
+this.year <- "things will be better in 2021!"
+
+```
+
+`r last.year` but I know that **`r this.year`**
+
