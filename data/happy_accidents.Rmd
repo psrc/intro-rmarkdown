@@ -9,23 +9,15 @@ output:
     
 ---
 
-Welcome to my Happy Little World. It is great to see all my friends eager to learn how to create a masterpiece using our R Skills. Take a look at the stuff below, this is called a "chunk".
+Welcome to my Happy Little World. Let's build something together.
 
 ```{r setup, echo=TRUE}
 
 library(knitr)
-
 happy_accidents <- file.path(getwd() ,'bob-ross.jfif')
-
-```
-
-Code chunks are things that are run in R, Python or SQL. You can do all sorts of calculations, images and plots. To "see" the code chunk in your final document, make sure **echo=TRUE**. The chunk below will display images (or a list of images if you have them) in your final markdown document.
-
-```{r fig.cap = "<b><i>image from Pinterest</b></i>", fig.align='center',echo=TRUE}
 include_graphics(happy_accidents)
-```
 
-Markdown is not unique to R, it is actually a lightweight markup language for creating formatted text using a plain-text editor. John Gruber and Aaron Swartz created Markdown in 2004 as a markup language that is appealing to human readers in its source code form. Markdown is widely used in blogging, instant messaging, online forums, collaborative software, documentation pages, and readme files.
+```
 
 Syntax in your Markdown document is used to "encode" or build your page. Let's start with **headings**. Wait - notice that **bold**, why did that happen? Because the characters before and after the word tell the encoder that you want the text to be **bold**!
 
@@ -44,7 +36,6 @@ Wait - why are things randomly *italicized*? You guessed it, it is that magic "*
 
 Even though size and color changes with headings, never use headers for their looks - they define things including chapters in a table of contents. If you want a good list of markdown syntax in R, use the cheatsheet that is accessible with *Help - Cheatsheets - R Markdown Cheatsheet*.
 
-There are many chunk options (shown in the {} definition) but the most used for me are **include** and **echo**. They are close in operation to one another with a subtle difference - **include=FALSE** will run your code chunk but no calculations or output are shown. Let's use this same image chunk as an example.
 
 ```{r fig.cap = "<b><i>image from Pinterest</b></i>", fig.align='center',include=FALSE}
 include_graphics(happy_accidents)
