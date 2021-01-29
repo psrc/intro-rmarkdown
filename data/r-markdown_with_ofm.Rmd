@@ -1,0 +1,185 @@
+---
+title: "OFM Population Estimates"
+output: 
+  html_document: 
+    theme: cerulean
+    css: styles.css
+    toc: TRUE
+    toc_float: TRUE
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+
+# This code "chunk" contains all the libraries/packages that are used in the overall script as well basic inputs that we might want to change
+
+# Packages for Data Cleaning/Processing
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(openxlsx)
+
+# Packages for Table and Chart creation
+library(ggplot2)
+library(scales)
+library(plotly)
+
+# Packages used to create markdown document (needed to knit children)
+library(knitr)
+
+# Some basic variables that will be used by the script
+psrc_counties <- c("King","Kitsap","Pierce","Snohomish")
+
+ofm.url <- 'https://www.ofm.wa.gov/sites/default/files/public/dataresearch/pop/april1/ofm_april1_population_final.xlsx'
+
+# Read in Functions and color palette
+source(file.path(getwd() , 'functions.R'))
+source(file.path(getwd() , 'psrc_palette.R'))
+
+```
+
+The data summarized in this document is pulled directly from the Washington State Office of Financial Management (OFM). RCW 43.62.030 states that OFM shall annually determine the April 1 populations of all cities and towns of the state.  OFM population estimates for cities and towns are used in state program administration and in the allocation of selected state revenues (RCW 43.62.020).  Population estimates for counties are used to allocate revenues as specified in RCW 36.13.100 and RCW 43.62.030. The dataset used in the following summary can be downloaded [here](`r toString(ofm.url)`). 
+<br><br>
+![](owensbeachptdefiance.jpg){width=100%}
+<br><br>
+This document was created using R Markdown. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+```{r ofm_data_prep, include=FALSE}
+
+# This code chunk will download the OFM file from the web, put a temp copy on your hard drive, clean it up for analysis and then remove the temporary file afterwards.
+
+download.file(ofm.url, "working.xlsx", quiet = FALSE, mode = "wb")
+ofm.pop.file <- paste0(getwd(),"/working.xlsx")
+
+ofm.pop <- as_tibble(read.xlsx(ofm.pop.file, detectDates = TRUE, skipEmptyRows = TRUE, startRow = 5, colNames = TRUE))
+
+# Get rid of things we don't need, make it long form and clean it up for use in plot making
+ofm.pop <- ofm.pop %>%
+  filter(County %in%  c(psrc_counties,"State")) %>%
+  pivot_longer(cols=contains("Population"), names_to="Year", values_to="Estimate") %>%
+  select(-Line) %>%
+  mutate(Year = str_replace(Year, ".Population.*", "")) %>%
+  mutate(Jurisdiction = str_replace(Jurisdiction, " \\(part\\)", "")) %>%
+  mutate_at(c('Filter','Year','Estimate'), as.numeric)
+
+# Create a Regional Summary by Filter Type and then Join to Full OFM tibble
+region.pop <- ofm.pop %>%
+  filter(Filter <= 3) %>%
+  select(Filter,Year, Estimate) %>%
+  group_by(Filter,Year) %>%
+  summarize_all(sum) %>%
+  mutate(County = "Region") %>%
+  mutate(Jurisdiction = "Region Total") %>%
+  mutate(Jurisdiction = ifelse(Filter == 2, "Unincorporated Region Total", Jurisdiction)) %>%
+  mutate(Jurisdiction = ifelse(Filter == 3, "Incorporated Region Total", Jurisdiction))
+
+# Add the regional results to the OFM full tibble
+ofm.pop <- bind_rows(ofm.pop,region.pop)
+
+# Add a column to place cities in population bins
+ofm.pop <- ofm.pop %>%
+  mutate(PopRange = case_when(
+        Estimate < 5000 ~ 1,
+        Estimate >= 5000 & Estimate <10000 ~ 2,
+        Estimate >= 10000 & Estimate < 25000 ~ 3,
+        Estimate >= 25000 & Estimate < 50000 ~ 4,
+        Estimate >= 50000 & Estimate < 75000 ~ 5,
+        Estimate >= 75000 ~ 6) %>%
+  as.factor() %>%
+    structure(levels = c("less than 5k","5k to 10k","10k to 25k","25k to 50k", "50k to 75k", "more than 75k"))
+  )
+
+# Remove the temporary Excel File that was downloaded and remove unnecessary data from memory
+file.remove(ofm.pop.file)
+rm(region.pop)
+
+# Determine a few parameters in the data
+first.year <- min(ofm.pop$Year)
+last.year<- max(ofm.pop$Year)
+
+```
+
+```{r region_state_chart_creation, include=FALSE}
+
+# Population Summary Data for use in markdown text
+first.year.pop.region <- ofm.pop %>% filter(Jurisdiction == "Region Total" & Year == first.year) %>% select(Estimate) %>% as.numeric
+last.year.pop.region <- ofm.pop %>% filter(Jurisdiction == "Region Total" & Year == last.year) %>% select(Estimate) %>% as.numeric
+
+first.year.pop.state <- ofm.pop %>% filter(Jurisdiction == "State Total" & Year == first.year) %>% select(Estimate) %>% as.numeric
+last.year.pop.state <- ofm.pop %>% filter(Jurisdiction == "State Total" & Year == last.year) %>% select(Estimate) %>% as.numeric
+
+first.year.region.share <- first.year.pop.region / first.year.pop.state
+last.year.region.share <- last.year.pop.region / last.year.pop.state
+
+# Create Line Chart for Region and State Population
+current.filter <- c(1,100)
+current.county <- c("Region","State")
+
+working.data <- ofm.pop %>%
+  filter(Filter %in% current.filter & County %in% current.county)
+
+total.region <- create_line_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.ltype = "solid", w.lwidth = 1.0, w.palette = psrc_colors)
+
+rm(working.data)
+
+```
+
+# Regional Population
+The population of the PSRC region totaled more than **`r toString(first.year.pop.region)`** people in `r toString(first.year)`. By `r toString(last.year)`, the total population of the region had grown to more than **`r toString(round(last.year.pop.region, -2))`** people, an increase of **`r toString(format(round(last.year.pop.region - first.year.pop.region, -1), nsmall=0, big.mark=","))`** people over `r toString(last.year - first.year)` years. More than *`r toString(round(last.year.region.share*100, 0))`%* of the State of Washington called the Puget Sound Region home in `r toString(last.year)`.
+
+```{r plot_region_state_chart, echo=TRUE}
+
+total.region
+
+```
+
+
+```{r region_incorporated_population_chart_creation, include=FALSE}
+
+# Population Summary Data for use in markdown text
+first.year.pop.region.inc <- ofm.pop %>% filter(Jurisdiction == "Incorporated Region Total" & Year == first.year) %>% select(Estimate) %>% as.numeric
+last.year.pop.region.inc <- ofm.pop %>% filter(Jurisdiction == "Incorporated Region Total" & Year == last.year) %>% select(Estimate) %>% as.numeric
+
+first.year.pop.region.uninc <- ofm.pop %>% filter(Jurisdiction == "Unincorporated Region Total" & Year == first.year) %>% select(Estimate) %>% as.numeric
+last.year.pop.region.uninc <- ofm.pop %>% filter(Jurisdiction == "Unincorporated Region Total" & Year == last.year) %>% select(Estimate) %>% as.numeric
+
+first.year.region.inc.share <- first.year.pop.region.inc / first.year.pop.region
+last.year.region.inc.share <- last.year.pop.region.inc / last.year.pop.region
+
+# Create Stacked Bar for Incorporated/Unincorporated Population
+current.filter <- c(2,3)
+current.county <- c("Region")
+
+working.data <- ofm.pop %>%
+  filter(Filter %in% current.filter & County %in% current.county)
+
+incorporated.region <- create_bar_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.bartype = "stack", w.transparent = 1.0, w.palette = psrc_colors)
+
+rm(working.data)
+
+```
+## Incorporated Area Population 
+In `r toString(first.year)`, approximately *`r toString(round(first.year.region.inc.share*100, 0))`%* of the regional population lived in our region's vibrant cities and towns. By `r toString(last.year)` the share of population in cities and towns had grown to *`r toString(round(last.year.region.inc.share*100, 0))`%*, accounting for more than **`r toString(format(round(last.year.pop.region.inc, -2), nsmall=0, big.mark=","))`** people living in the region's incorporated places.
+
+```{r plot_region_incorporated_chart, echo=FALSE}
+
+incorporated.region
+
+```
+
+# County Population {.tabset}
+There are `r length(psrc_counties)` counties that make up the Puget Sound Region and they are **`r psrc_counties`** counties. The population distribution of the `r length(psrc_counties)` counties are shown below:<br><br>
+
+```{r county_chart, echo = FALSE, include = FALSE, results = 'asis'}
+out <- NULL
+
+for (current.county in psrc_counties) {
+  out <- c(out, knit_child("county_child.Rmd"))
+}
+
+```
+
+`r paste(out, collapse="\n")`
+
+# Contact Us
+If you have any questions about this data or would like to know more, please don't hesitate to contact us at <library@psrc.org>.
