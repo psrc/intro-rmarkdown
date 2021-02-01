@@ -1,0 +1,91 @@
+---
+title: "county-data-summary"
+output: html_document
+---
+
+```{r, include=FALSE}
+
+# Population Summary Data for use in markdown text
+first.year.pop.county <- ofm.pop %>% filter(Jurisdiction == paste0(current.county, " County") & Year == first.year) %>% select(Estimate) %>% as.numeric
+last.year.pop.county <- ofm.pop %>% filter(Jurisdiction == paste0(current.county, " County") & Year == last.year) %>% select(Estimate) %>% as.numeric
+
+# Create Line Chart for Total County Population
+current.filter <- 1
+
+working.data <- ofm.pop %>%
+  filter(Filter == current.filter & County == current.county)
+
+total.county <- create_line_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.ltype = "twodash", w.lwidth = 1.5, w.palette = psrc_colors)
+
+# Create Stacked Bar Chart for County Population by Incorporated/Unincorporated Population
+current.filter <- c(2,3)
+
+working.data <- ofm.pop %>%
+  filter(Filter %in% current.filter & County == current.county)
+
+incorporation.county <- create_bar_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.bartype = "stack", w.transparent = 1.0, w.palette = psrc_colors)
+
+# Create Bar Chart for City Population by County
+current.filter <- c(4)
+
+working.data <- ofm.pop %>%
+  filter(Filter %in% current.filter & County == current.county & Year == last.year) %>%
+  arrange(desc(Estimate))
+
+city.county <- ggplot()
+city.county <-  ggplotly(city.county +
+  geom_col(data = working.data, 
+           aes(x = reorder(Jurisdiction, -Estimate), y = Estimate, fill = Jurisdiction),
+           color = "black",
+           alpha = 1.0,
+           position = "dodge") +
+    labs(x = NULL, y = NULL) +
+    #scale_fill_manual(values= psrc_colors) +
+    scale_y_continuous(labels = label_comma() ) +
+    theme(plot.title = element_text(size = 10, face = 'bold'),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.line = element_blank(),
+          panel.background = element_blank(),
+          panel.grid.major.y = element_line(colour="#BBBDC0",size = 0.25),
+          panel.grid.minor.y = element_line(colour="#BBBDC0",size = 0.25),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          text = element_text(family = "Segoe UI"),
+          legend.position = "none",
+          legend.title = element_blank())+
+    facet_wrap(vars(PopRange), scales = "free") +
+    theme(legend.position = "none"))
+
+```
+
+## `r paste0(current.county," County")`
+
+`r toString(paste0(current.county, " County"))` was home to **`r toString(format(round(as.numeric(first.year.pop.county), -2), nsmall=0, big.mark=","))`** people in `r toString(format(as.character(first.year)))`. By `r toString(format(as.character(last.year)))`, the total population of the county had grown to more than **`r toString(format(round(as.numeric(last.year.pop.county), -2), nsmall=0, big.mark=","))`** people, an increase of **`r toString(format(round(as.numeric(last.year.pop.county - first.year.pop.county), -1), nsmall=0, big.mark=","))`** people over `r toString(format(round(as.numeric(last.year - first.year), 0), nsmall=0, big.mark=","))` years.
+
+### `r paste0(current.county," County")` Total Population
+This is the total population of the county.
+```{r, echo=FALSE}
+
+total.county
+
+```
+
+### `r paste0(current.county," County")` Incorporated Area Population
+This is a stacked bar by incorporation status
+
+```{r, echo=FALSE}
+
+incorporation.county
+
+```
+
+### Population of Cities and Towns in `r paste0(current.county," County")`: `r toString(format(as.character(last.year)))`
+This is a plot of population for every city in the county
+
+
+```{r, echo=FALSE}
+
+city.county
+
+```

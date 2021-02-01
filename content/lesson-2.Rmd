@@ -1,0 +1,191 @@
+---
+title: "Lesson #2: OFM Population Estimates"
+output: 
+  html_document: 
+    theme: cerulean
+    css: styles.css
+    toc: TRUE
+    toc_float: TRUE
+    toc_depth: 3
+---
+
+Welcome to our second R Markdown lesson. This lesson is going to create an html output file that summarizes population data from the Office of Financial Management (OFM). This lesson builds off of your previous lessons in `dplyr` and `ggplot2` so hope you remember all that great stuff! I am also going to show you a few tricks to make this look more *PSRC appropriate*.
+
+# In the begining
+To start this lesson, first let's clear out the environment and restart the R session. It is  a good idea to clear out the environment and restart R when you switch projects. If you don't, all your previous data will remain in memory as well as your libraries. It can lead to issues so it is best to start fresh - which also happens if you just close and reopen RStudio. To clear the environment and restart R do the following:
+
+**Clear Environment**
+![](1_ofm_clear_enivro.png){width=35%} 
+
+**Restart R**
+![](2_ofm_restart_r.png){width=35%}  
+
+Now let's load the file `my_ofm_trend.Rmd` that you already downloaded into RStudio as our starting point. This `RMD` document should look somewhat familiar to the one we just did with Bob. It has a `yaml header`, a `code chunk`and some `inline text`. Lets take a look at the components quickly.
+
+<br>
+**Header**  
+The header tells R that we want an HTML document that uses some custom formatting provided in the file `styles.css`. We also want a table of contents that floats and only shows items down to Heading Level 2.
+
+>`---`  
+>title: "OFM Population Estimates"  
+>output:  
+>  html_document:  
+>  theme: cerulean   
+>  css: styles.css  
+>  toc: TRUE  
+>  toc_float: TRUE  
+>  toc_depth: 2  
+>`---`  
+
+<br>
+**Code Chunk for Initial Setup**  
+This chunk of code loads all the libraries that we will be using in the lesson and provides some basic inputs that are used throughout the script. All the libraries we are using today were used in the previous two R sessions, the only new one for today is `knitr`.  
+
+There are a couple new concepts that we will touch on today but not spend a lot of time looking at - how to download an Excel file directly from a website and also how to use other files that might contain functions, lists, inputs etc. in your code without having to re-type them.
+
+```{r setup, eval=FALSE, echo=TRUE}
+
+# This code "chunk" contains all the libraries/packages that are used in the overall script as well basic inputs that we might want to change
+
+# Packages for Data Cleaning/Processing
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(openxlsx)
+
+# Packages for Table and Chart creation
+library(ggplot2)
+library(scales)
+library(plotly)
+
+# Packages used to create markdown document (needed to knit children)
+library(knitr)
+
+# Some basic variables that will be used by the script
+psrc_counties <- c("King","Kitsap","Pierce","Snohomish")
+
+ofm.url <- 'https://www.ofm.wa.gov/sites/default/files/public/dataresearch/pop/april1/ofm_april1_population_final.xlsx'
+
+# Read in Functions and color palette
+source(file.path(getwd() , 'functions.R'))
+source(file.path(getwd() , 'psrc_palette.R'))
+
+```
+
+## New Content - sourcing files
+When we `source`a file, we are effectively telling R to run that file and make all of its contents available in the current R session. In this example, we `source` two files:
+
+1. functions.R
+2. psrc_palette.R
+
+### Functions
+The `functions.R` file has two custom functions that were written to create a line and bar chart using ggplot2. I write functions like this so that I can make my charts and figures look consistent withut having to keep copying and pasting things. Remember the golden rule on functions - if you copy the same line more than twice, write a function instead! Let's open `funcitons.R` in RStudio so you can see what it looks like using:  
+![](3_ofm_open_functions.png){width=35%} 
+
+``` {r, eval=FALSE, echo=TRUE}
+
+# Useful Functions
+
+create_line_chart <- function(w.data, w.x, w.y, w.color, w.ltype, w.lwidth, w.palette) {
+  
+  y.max <- 1.25 * max(w.data[w.y])
+  x.breaks <- unique(w.data %>% pull(w.x))
+  
+  g <-  ggplotly(ggplot(data=w.data, 
+                        aes(x = get(eval(w.x)), 
+                            y = get(eval(w.y)), 
+                            color = get(eval(w.color)), 
+                            group=1, 
+                            text = paste0("<b>Year: </b>",  get(eval(w.x)), "<br>","<b>Population: </b>", prettyNum(round(get(eval(w.y)), 0), big.mark = ","), "<br>")))  + 
+                   geom_line(linetype = w.ltype,
+                             size = w.lwidth) +
+                   scale_y_continuous(labels = label_comma(), limits = c(0,y.max)) +
+                   scale_x_continuous(breaks= x.breaks) +
+                   scale_color_manual(values = w.palette) +
+                   labs(x = w.x, y = NULL) +
+                   theme(plot.title = element_text(size = 10, face = 'bold'),
+                         axis.text.x = element_text(angle = 0,
+                                                    hjust = 1, 
+                                                    vjust = 1,
+                                                    family = 'Comic Sans MS'),
+                         axis.ticks.x = element_blank(),
+                         axis.line.x = element_blank(),
+                         axis.line.y = element_line(colour="#BBBDC0",size = 0.25),
+                         panel.background = element_blank(),
+                         panel.grid.major.y = element_line(colour="#BBBDC0",size = 0.25),
+                         panel.grid.minor.y = element_line(colour="#BBBDC0",size = 0.25),
+                         panel.grid.major.x = element_blank(),
+                         panel.grid.minor.x = element_blank(),
+                         text = element_text(family = "Segoe UI"),
+                         legend.position = "bottom",
+                         legend.title = element_blank()),
+                 tooltip = c("text")) %>% layout(legend = list(orientation = "h", xanchor = "center", x = 0.5, y = -0.25), hovermode = "x")
+  
+  return(g)
+  
+}
+
+create_bar_chart <- function(w.data, w.x, w.y, w.color, w.bartype, w.transparent, w.palette) {
+  
+  x.breaks <- unique(w.data %>% pull(w.x))
+  
+  g <-  ggplotly(ggplot(data = w.data,
+                        aes(x = get(eval(w.x)), 
+                            y = get(eval(w.y)), 
+                            fill = get(eval(w.color)), 
+                            group=1, 
+                            text = paste0("<b>", get(eval(w.color))," Population: </b>", prettyNum(round(get(eval(w.y)), 0), big.mark = ","), "<br>"))) +
+                   geom_col(color = "black",
+                            alpha = w.transparent,
+                            position = w.bartype) +
+                   scale_y_continuous(labels = label_comma()) +
+                   scale_x_continuous(breaks= x.breaks) +
+                   scale_fill_manual(values = w.palette) +
+                   labs(x = w.x, y = NULL) +
+                   theme(plot.title = element_text(size = 10, face = 'bold'),
+                         axis.text.x = element_text(angle = 0,
+                                                    hjust = 1, 
+                                                    vjust = 1,
+                                                    family = 'Comic Sans MS'),
+                         axis.ticks.x = element_blank(),
+                         axis.line = element_blank(),
+                         panel.background = element_blank(),
+                         panel.grid.major.y = element_line(colour="#BBBDC0",size = 0.25),
+                         panel.grid.minor.y = element_line(colour="#BBBDC0",size = 0.25),
+                         panel.grid.major.x = element_blank(),
+                         panel.grid.minor.x = element_blank(),
+                         text = element_text(family = "Segoe UI"),
+                         legend.position = "bottom",
+                         legend.title = element_blank()),
+                 tooltip = c("text")) %>% layout(legend = list(orientation = "h", xanchor = "center", x = 0.5, y = -0.25))
+  
+  return(g)
+  
+}
+```
+
+### Palette
+`palette.R` has information on what colors to use for different specific names and categories.
+
+``` {r, echo=TRUE, eval=FALSE}
+psrc_colors <- c(
+  "King County" = "#AD5CAB",
+  "Incorporated King County" = "#C388C2",
+  "Unincorporated King County" = "#E3C9E3",
+  "Kitsap County" = "#F4835E",
+  "Incorporated Kitsap County" = "#F7A489",
+  "Unincorporated Kitsap County" = "#FBD6C9",
+  "Pierce County" = "#A9D46E",
+  "Incorporated Pierce County" = "#C0E095",
+  "Unincorporated Pierce County" = "#E2F1CF",
+  "Snohomish County" = "#40BDB8",
+  "Incorporated Snohomish County" = "#73CFCB",
+  "Unincorporated Snohomish County" = "#BFE9E7",
+  "Region Total" = "#91268F",
+  "Incorporated Region Total" = "#AD5CAB",
+  "Unincorporated Region Total" = "#E3C9E3",
+  "State Total" = "#8CC63E",
+  "Incorporated State Total" = "#A9D46E",
+  "Unincorporated State Total" = "#E2F1CF"
+)
+```
