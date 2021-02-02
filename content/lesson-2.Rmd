@@ -77,7 +77,13 @@ When we `source`a file, we are effectively telling R to run that file and make a
 2. psrc_palette.R
 
 #### Functions
-The `functions.R` file has three custom functions that were written to create a line and bar chart using ggplot2 and return an estimated value from a tibble. I write functions like this so that I can make my charts and figures look consistent without having to keep copying and pasting things. Remember the golden rule on functions - if you copy the same line more than twice, write a function instead! Let's open `funcitons.R` in RStudio so you can see what it looks like using:  
+The `functions.R` file has four custom functions that were written to create:
+1. A line chart
+2. Bar Chart
+3. Facet Wrapped Bar Chart
+4. Return an estimated value from a tibble  
+
+I write functions like this so that I can make my charts and figures look consistent without having to keep copying and pasting things. Remember the golden rule on functions - if you copy the same line more than twice, write a function instead! Let's open `funcitons.R` in RStudio so you can see what it looks like using:  
 ![](3_ofm_open_functions.png){width=35%}   
 
 I have also placed the code here as well:
@@ -125,24 +131,22 @@ create_line_chart <- function(w.data, w.x, w.y, w.color, w.ltype, w.lwidth, w.pa
   
 }
 
-create_bar_chart <- function(w.data, w.x, w.y, w.color, w.bartype, w.transparent, w.palette) {
+create_bar_chart <- function(w.data, w.x, w.y, w.color, w.bartype, w.transparent, w.palette, x.type) {
   
-  x.breaks <- unique(w.data %>% pull(w.x))
+  if (x.type == "discrete") {
   
-  g <-  ggplotly(ggplot(data = w.data,
-                        aes(x = get(eval(w.x)), 
-                            y = get(eval(w.y)), 
-                            fill = get(eval(w.color)), 
-                            group=1, 
-                            text = paste0("<b>", get(eval(w.color))," Population: </b>", prettyNum(round(get(eval(w.y)), 0), big.mark = ","), "<br>"))) +
-                   geom_col(color = "black",
-                            alpha = w.transparent,
-                            position = w.bartype) +
-                   scale_y_continuous(labels = label_comma()) +
-                   scale_x_continuous(breaks= x.breaks) +
-                   scale_fill_manual(values = w.palette) +
-                   labs(x = w.x, y = NULL) +
-                   theme(plot.title = element_text(size = 10, face = 'bold'),
+    g <-  ggplotly(ggplot(data = w.data,
+                          aes(x = get(eval(w.x)), 
+                              y = get(eval(w.y)), 
+                              fill = get(eval(w.color)), 
+                              group=1, 
+                              text = paste0("<b>", get(eval(w.color))," Population: </b>", prettyNum(round(get(eval(w.y)), 0), big.mark = ","), "<br>"))) +
+                    geom_col(color = "black",
+                              alpha = w.transparent,
+                              position = w.bartype) +
+                    scale_y_continuous(labels = label_comma()) +
+                    labs(x = w.x, y = NULL) +
+                    theme(plot.title = element_text(size = 10, face = 'bold'),
                          axis.text.x = element_text(angle = 0,
                                                     hjust = 1, 
                                                     vjust = 1,
@@ -157,12 +161,81 @@ create_bar_chart <- function(w.data, w.x, w.y, w.color, w.bartype, w.transparent
                          text = element_text(family = "Segoe UI"),
                          legend.position = "bottom",
                          legend.title = element_blank()),
-                 tooltip = c("text")) %>% layout(legend = list(orientation = "h", xanchor = "center", x = 0.5, y = -0.25))
+                  tooltip = c("text")) %>% layout(legend = list(orientation = "h", xanchor = "center", x = 0.5, y = -0.25))
+    
+  } else {
+    x.breaks <- unique(w.data %>% pull(w.x))
+    g <-  ggplotly(ggplot(data = w.data,
+                          aes(x = get(eval(w.x)), 
+                              y = get(eval(w.y)), 
+                              fill = get(eval(w.color)), 
+                              group=1, 
+                              text = paste0("<b>", get(eval(w.color))," Population: </b>", prettyNum(round(get(eval(w.y)), 0), big.mark = ","), "<br>"))) +
+                     geom_col(color = "black",
+                              alpha = w.transparent,
+                              position = w.bartype) +
+                     scale_y_continuous(labels = label_comma()) +
+                     scale_fill_manual(values = w.palette) +
+                     scale_x_continuous(breaks= x.breaks) +
+                     labs(x = w.x, y = NULL) +
+                     theme(plot.title = element_text(size = 10, face = 'bold'),
+                           axis.text.x = element_text(angle = 0,
+                                                      hjust = 1, 
+                                                      vjust = 1,
+                                                      family = 'Comic Sans MS'),
+                           axis.ticks.x = element_blank(),
+                           axis.line = element_blank(),
+                           panel.background = element_blank(),
+                           panel.grid.major.y = element_line(colour="#BBBDC0",size = 0.25),
+                           panel.grid.minor.y = element_line(colour="#BBBDC0",size = 0.25),
+                           panel.grid.major.x = element_blank(),
+                           panel.grid.minor.x = element_blank(),
+                           text = element_text(family = "Segoe UI"),
+                           legend.position = "bottom",
+                           legend.title = element_blank()),
+                   tooltip = c("text")) %>% layout(legend = list(orientation = "h", xanchor = "center", x = 0.5, y = -0.25))    
+    
+    
+  }
   
   return(g)
   
 }
 
+create_facet_bar_chart <- function(w.data, w.x, w.y, w.color, w.vars, w.scales) {
+  
+  g <-  ggplotly(ggplot(data = w.data,
+                        aes(x = reorder(get(eval(w.x)), -get(eval(w.y))), 
+                            y = get(eval(w.y)), 
+                            fill = get(eval(w.color)),
+                            text = paste0("<b>", get(eval(w.color)), ": </b>", prettyNum(round(get(eval(w.y)), 0), big.mark = ","), "<br>"))) +
+                             geom_col(
+                               color = "black",
+                               alpha = 1.0,
+                               position = "dodge") +
+                             labs(x = NULL, y = NULL) +
+                             scale_y_continuous(labels = label_comma() ) +
+                             theme(plot.title = element_text(size = 10, face = 'bold'),
+                                   axis.text.x = element_blank(),
+                                   axis.ticks.x = element_blank(),
+                                   axis.line = element_blank(),
+                                   panel.background = element_blank(),
+                                   panel.grid.major.y = element_line(colour="#BBBDC0",size = 0.25),
+                                   panel.grid.minor.y = element_line(colour="#BBBDC0",size = 0.25),
+                                   panel.grid.major.x = element_blank(),
+                                   panel.grid.minor.x = element_blank(),
+                                   text = element_text(family = "Segoe UI"),
+                                   legend.position = "none",
+                                   legend.title = element_blank())+
+                             facet_wrap(vars(get(eval(w.vars))), scales = w.scales) +
+                             theme(legend.position = "none"),
+                 tooltip = c("text"))
+    
+  return(g)
+  
+}
+
+  
 return_population_estimate <- function(data, place, year) {
   
   pop <- data %>% filter(Jurisdiction == place & Year == year) %>% select(Estimate) %>% as.numeric
@@ -440,7 +513,7 @@ last.year.pop.region.uninc <- return_population_estimate(ofm.pop, "Unincorporate
 
 ```
 
-And finally let's calculate the `incporated share`
+And finally let's calculate the `incorporated share`
 ```{r eval=FALSE, echo=TRUE}
 
 first.year.region.inc.share <- first.year.pop.region.inc / first.year.pop.region
@@ -481,7 +554,7 @@ working.data <- ofm.pop %>%
 Now that we have filtered the data down, we can create the `stacked bar chart` using our custom function.
 ```{r eval=FALSE, echo=TRUE}
 
-incorporated.region <- create_bar_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.bartype = "stack", w.transparent = 1.0, w.palette = psrc_colors)
+incorporated.region <- create_bar_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.bartype = "stack", w.transparent = 1.0, w.palette = psrc_colors, x.type = "continuous")
 
 ```
 
@@ -493,10 +566,118 @@ Just in case you need the full `incorporated_plot` chunk, here it is to copy and
 working.data <- ofm.pop %>%
   filter(Jurisdiction %in% c("Incorporated Region Total", "Unincorporated Region Total"))
 
-incorporated.region <- create_bar_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.bartype = "stack", w.transparent = 1.0, w.palette = psrc_colors)
+incorporated.region <- create_bar_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.bartype = "stack", w.transparent = 1.0, w.palette = psrc_colors, x.type = "continuous")
 
 rm(working.data)
 
 incorporated.region
+
+```
+
+# Cities
+Now we can pull out some interesting facts on population in cities from our data and display them as a facet wrapped bar charts. Like previously, we will setup the document to get values programmatically from the data based on the first and last year in the data.
+
+## Data Calculations
+First we need to filter the data to a single year as there are 82 cities and towns in the region
+```{r eval=FALSE, echo=TRUE}
+
+working.data <- ofm.pop %>%
+  filter(Filter ==4 & Year == last.year) %>%
+  arrange(desc(Estimate))
+
+# There are some places (Auburn, Bothell, etc.) that are in two counties so we should aggregate to get to one line per city
+working.data <- working.data %>%
+  select(Jurisdiction, Estimate) %>%
+  group_by(Jurisdiction) %>%
+  summarize_all(sum) %>%
+  mutate(PopRange = case_when(
+    Estimate < 5000 ~ 1,
+    Estimate >= 5000 & Estimate <10000 ~ 2,
+    Estimate >= 10000 & Estimate < 25000 ~ 3,
+    Estimate >= 25000 & Estimate < 50000 ~ 4,
+    Estimate >= 50000 & Estimate < 75000 ~ 5,
+    Estimate >= 75000 ~ 6) %>%
+  as.factor() %>%
+    structure(levels = c("less than 5k","5k to 10k","10k to 25k","25k to 50k", "50k to 75k", "more than 75k"))
+  )
+
+num.juris <- working.data %>% select(Jurisdiction) %>% count() %>% as.numeric
+
+```
+
+Now we can find the `biggest city`
+```{r eval=FALSE, echo=TRUE}
+
+biggest.city <- working.data %>% filter(Estimate == max(Estimate)) %>% select(Jurisdiction) %>% as.character
+biggest.pop <- working.data %>% filter(Estimate == max(Estimate)) %>% select(Estimate) %>% as.numeric
+
+```
+
+And finally let's calculate the `smallest city`
+```{r eval=FALSE, echo=TRUE}
+
+smallest.city <- working.data %>% filter(Estimate == min(Estimate)) %>% select(Jurisdiction) %>% as.character
+smallest.pop <- working.data %>% filter(Estimate == min(Estimate)) %>% select(Estimate) %>% as.numeric
+
+```
+
+### Final cities_data working chunk
+Just in case you need the full `cities_data` chunk, here it is to copy and paste in to your code.
+
+```{r eval=FALSE, echo=TRUE}
+
+# Filter to Cities
+working.data <- ofm.pop %>%
+  filter(Filter ==4 & Year == last.year) %>%
+  arrange(desc(Estimate))
+
+# There are some places (Auburn, Bothell, etc.) that are in two counties so we should aggregate to get to one line per city
+working.data <- working.data %>%
+  select(Jurisdiction, Estimate) %>%
+  group_by(Jurisdiction) %>%
+  summarize_all(sum) %>%
+  mutate(PopRange = case_when(
+    Estimate < 5000 ~ 1,
+    Estimate >= 5000 & Estimate <10000 ~ 2,
+    Estimate >= 10000 & Estimate < 25000 ~ 3,
+    Estimate >= 25000 & Estimate < 50000 ~ 4,
+    Estimate >= 50000 & Estimate < 75000 ~ 5,
+    Estimate >= 75000 ~ 6) %>%
+  as.factor() %>%
+    structure(levels = c("less than 5k","5k to 10k","10k to 25k","25k to 50k", "50k to 75k", "more than 75k"))
+  )
+
+num.juris <- working.data %>% select(Jurisdiction) %>% count() %>% as.numeric
+biggest.city <- working.data %>% filter(Estimate == max(Estimate)) %>% select(Jurisdiction) %>% as.character
+biggest.pop <- working.data %>% filter(Estimate == max(Estimate)) %>% select(Estimate) %>% as.numeric
+
+smallest.city <- working.data %>% filter(Estimate == min(Estimate)) %>% select(Jurisdiction) %>% as.character
+smallest.pop <- working.data %>% filter(Estimate == min(Estimate)) %>% select(Estimate) %>% as.numeric
+
+```
+
+## Facet Wrap Bar Charts of Data
+Now that we have calculated the values needed for our inline text, we can now create and display our chart for all cities using our `create_facet_bar_chart` function. Since we already had to filter things on this data set, this chunk down't require any further processing of the data.
+
+```{r eval=FALSE, echo=TRUE}
+
+region.cities <- create_facet_bar_chart(working.data, "Jurisdiction", "Estimate" , "Jurisdiction", "PopRange", "free")
+
+rm(working.data)
+
+region.cities
+
+```
+
+### Final cities_plot working chunk
+Just in case you need the full `cities_plot` chunk, here it is to copy and paste in to your code
+
+```{r eval=FALSE, echo=TRUE}
+
+region.cities <- create_facet_bar_chart(working.data, "Jurisdiction", "Estimate" , "Jurisdiction", "PopRange", "free")
+
+rm(working.data)
+
+region.cities
 
 ```
