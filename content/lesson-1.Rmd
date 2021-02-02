@@ -18,42 +18,54 @@ A R Markdown document is made up of three key parts:
 2. Chunks  
 3. In-line Text  
 
-# Headers
-Lets's Start with the **Header** of our HTML document - it tells R exactly what we want to do and how to do it. Here is the header we are going to use for our first markdown document:
+# Our First Markdown Document
+To start, let's open `RStudio` and create a new R Markdown document. Do this with 
+
+![](6_happy_accidents_rmarkdown.png){width=50%}  
+<br>Let's create a `HTML` document and call it `Happy Accidents`.
+
+![](7_happy_accidents_rmarkdown_2.png){width=50%} 
+
+<br>When you click `OK` you will get a new document that looks something like this:  
+
+![](8_happy_accidents_rmarkdown_3.png){width=100%} 
+
+## YAML Header
+Lets's Start with the **Header** of our HTML document - it tells R exactly what we want to do and how to do it. You will see it referred to as the `YAML` metadata. YAML (a recursive acronym for "YAML Ain't Markup Language") is a human-readable data-serialization language that is commonly used for configuration files and in applications where data is being stored or transmitted. Let's work to change the default `YAML Header` RStudio created for us with these values for our first markdown document:
 
 ![](1_happy_accidents_header.png){width=35%}
 
 The key line in the header is **html_document**. This tells R what type of document to render. 
 
-# Chunks
-The next part of a markdown document are the Code **Chunks**. These are the places where we define the code that is run to tidy data, perform analysis and create outputs like charts and tables. Code **Chunks** are defined by ```. Let's use a code chunk to define any libraries our document will use and a reference to the location of an image file we want to display.
+## Chunks
+The next part of a markdown document are the Code **Chunks**. These are the places where we define the code that is run to tidy data, perform analysis and create outputs like charts and tables. Code **Chunks** are defined by ```. Let's use a code chunk to define any libraries our document will use and a reference to the location of an image file we want to display. We can repalce the first chunk in our document. Let's make it look like this (you can copy this text into the code chunk)
 
-![](2_happy_accidents_setup_chunk.png){width=100%}
-
-There are many chunk options but the most used for me are **include** and **echo**. They are close in operation to one another with a subtle difference - **include=FALSE** will run your code chunk but no calculations or output are shown whereas **echo=FALSE** will run your chunk, not show the calculations in the chuink but will show any outputs.
-
-When we run the chunk above, we should see this:
+Run it and you should get this:
 
 ```{r setup, echo=TRUE}
+#```{r setup, echo=TRUE}
 library(knitr)
 happy_accidents <- file.path(getwd() ,'bob-ross.jfif')
 include_graphics(happy_accidents)
 ```
 
-# In-Line Text
+There are many chunk options but the most used for me are `include` and `echo`. They are close in operation to one another with a subtle difference - `include=FALSE` will run your code chunk but no calculations or output are shown whereas `echo=FALSE` will run your chunk, not show the calculations in the chuink but will show any outputs. Other common options include `eval`, `warning` and `messages`
+
+
+## In-Line Text
 One of the biggest differences between R Markdown and the scripts you have written so far is that your scripts did analysis and created output but text descriptions were never included. Markdown can create a document full of text, images, graphics, maps. etc. that you can re-create. The power comes in the fact that the code is run on your data every time the document is rendered so if the data updates, so does your document! The text can be static but it can also be responsive to your code chunks.
 
-## Basic Formatting
+### Basic Formatting
 Syntax in your Markdown document is used to "encode" or build your page. 
 
-### Headings
+#### Headings
 Let's start with **headings**. Headings are defined by the `#` sign and can range from Level 1 to Level 6, although I rarely go beyond Level 4 in my documents. Here is an example of how to define a few headings.
 
 ![](3_happy_accidents_heading_styles.png){width=100%}
 
 Even though size and color changes with headings, never use headers for their looks - they define things including chapters in a table of contents. 
 
-### Text Formats
+#### Text Formats
 The most useful formats I find to use on text include **bold**, *italics* and hyperlinks.
 
 ![](4_happy_accidents_formats.png){width=50%}  
@@ -67,12 +79,19 @@ If you want a list of markdown syntax in R, use the cheatsheet that is accessibl
 
 Let's wrap up our example with with some basic text to add to our webpage.
 
+# Continue our Example
+
+Let's add another code chunk to our document to store a couple of values to display with inline text. You can copy this into the second code chunk in our document
+
 ```{r echo=TRUE}
 
+# ```{r echo=TRUE}
 last.year <- "I hated 2020"
 this.year <- "things will be better in 2021!"
-
+#```
 ```
 
-`r last.year` but I know that **`r this.year`**
+Now let's work together to do some inline text and create the following:
+
+![](9_happy_accidents_rmarkdown_4.png){width=100%}  
 
