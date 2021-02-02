@@ -77,3 +77,10 @@ create_bar_chart <- function(w.data, w.x, w.y, w.color, w.bartype, w.transparent
   
 }
 
+return_population_estimate <- function(data, place, year) {
+  
+  pop <- data %>% filter(Jurisdiction == place & Year == year) %>% select(Estimate) %>% as.numeric
+  return(pop)
+  
+}
+

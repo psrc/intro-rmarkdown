@@ -44,11 +44,46 @@ The data summarized in this document is pulled directly from the Washington Stat
 <br><br>
 This document was created using R Markdown. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-```{r}
+```{r ofm_data_prep, include=FALSE}
 
-# Let's do this part together!
 
 ```
+
+```{r region_state_data, include=FALSE}
+
+
+```
+
+# Regional Population
+The population of the PSRC region totaled more than **`r toString(first.year.pop.region)`** people in `r toString(first.year)`. By `r toString(last.year)`, the total population of the region had grown to more than **`r toString(round(last.year.pop.region, -2))`** people, an increase of **`r toString(format(round(last.year.pop.region - first.year.pop.region, -1), nsmall=0, big.mark=","))`** people over `r toString(last.year - first.year)` years. More than *`r toString(round(last.year.region.share*100, 0))`%* of the State of Washington called the Puget Sound Region home in `r toString(last.year)`.
+
+```{r region_state_plot, echo=FALSE, warning=FALSE}
+
+
+```
+
+```{r incorporated_data, include=FALSE}
+
+
+```
+
+## Incorporated Area Population 
+In `r toString(first.year)`, approximately *`r toString(round(first.year.region.inc.share*100, 0))`%* of the regional population lived in our region's vibrant cities and towns. By `r toString(last.year)` the share of population in cities and towns had grown to *`r toString(round(last.year.region.inc.share*100, 0))`%*, accounting for more than **`r toString(format(round(last.year.pop.region.inc, -2), nsmall=0, big.mark=","))`** people living in the region's incorporated places.
+
+```{r incorporated_plot, echo=FALSE, warning=FALSE}
+
+
+```
+
+# County Population {.tabset}
+There are `r length(psrc_counties)` counties that make up the Puget Sound Region and they are **`r psrc_counties`** counties. The population distribution of the `r length(psrc_counties)` counties are shown below:<br><br>
+
+```{r county_chart, echo = FALSE, include = FALSE, results = 'asis'}
+
+
+```
+
+`r paste(out, collapse="\n")`
 
 # Contact Us
 If you have any questions about this data or would like to know more, please don't hesitate to contact us at <library@psrc.org>.

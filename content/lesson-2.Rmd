@@ -11,7 +11,7 @@ output:
 
 Welcome to our second R Markdown lesson. This lesson is going to create an html output file that summarizes population data from the Office of Financial Management (OFM). This lesson builds off of your previous lessons in `dplyr` and `ggplot2` so hope you remember all that great stuff! I am also going to show you a few tricks to make this look more *PSRC appropriate*.
 
-# In the begining
+# OFM Trend
 To start this lesson, first let's clear out the environment and restart the R session. It is  a good idea to clear out the environment and restart R when you switch projects. If you don't, all your previous data will remain in memory as well as your libraries. It can lead to issues so it is best to start fresh - which also happens if you just close and reopen RStudio. To clear the environment and restart R do the following:
 
 **Clear Environment**
@@ -20,7 +20,7 @@ To start this lesson, first let's clear out the environment and restart the R se
 **Restart R**
 ![](2_ofm_restart_r.png){width=35%}  
 
-Now let's load the file `my_ofm_trend.Rmd` that you already downloaded into RStudio as our starting point. This `RMD` document should look somewhat familiar to the one we just did with Bob. It has a `yaml header`, a `code chunk`and some `inline text`. Lets take a look at the components quickly.
+Now let's load the file `ofm_trend.Rmd` that you already downloaded into RStudio as our starting point. This `RMD` document should look somewhat familiar to the one we just did with Bob. It has a `yaml header`, a `code chunk`and some `inline text`. Lets take a look at the components quickly.
 
 ## YAML Header
 The header tells R that we want an HTML document that uses some custom formatting provided in the file `styles.css`. We also want a table of contents that floats and only shows items down to Heading Level 2.
@@ -162,6 +162,13 @@ create_bar_chart <- function(w.data, w.x, w.y, w.color, w.bartype, w.transparent
   return(g)
   
 }
+
+return_population_estimate <- function(data, place, year) {
+  
+  pop <- data %>% filter(Jurisdiction == place & Year == year) %>% select(Estimate) %>% as.numeric
+  return(pop)
+  
+}
 ```
 
 #### Palette
@@ -195,7 +202,7 @@ This is the first section of the document that renders text - a brief descriptio
 
 ![](4_ofm_inline_text.png){width=100%} 
 
-# dplyr Fun
+# OFM Data Prep
 Now lets start processing the OFM data so that we can create the visuals we want in our document. The steps we are going to follow are:
 
 1. Download the data.
@@ -263,8 +270,8 @@ ofm.pop <- ofm.pop %>%
 
 ```
 
-## Entire working dplyr chunk
-Now that we stepped through all that, let's go ahead and copy and paste the following code to to our `dplyr` chunk so that we can move along. If you have questions about what the rest of the code is doing, come visit me during office hours and we can chat it over.
+## Final ofm_data_prep working chunk
+Now that we stepped through all that, let's go ahead and copy and paste the following code to to our `ofm_data_prep` chunk so that we can move along. If you have questions about what the rest of the code is doing, come visit me during office hours and we can chat it over.
     
 ```{r eval=FALSE, echo=TRUE}
 
@@ -314,8 +321,182 @@ ofm.pop <- ofm.pop %>%
 file.remove(ofm.pop.file)
 rm(region.pop)
 
-# Determine a few parameters in the data
-first.year <- min(ofm.pop$Year)
-last.year<- max(ofm.pop$Year)
+```
+
+# Region and State
+The inline text of our document is interesting if it pulls out some interesting facts from our data and displays them. We want the document to adapt to changes in the data, so we are trying to be as programmatic as possible. Since each year new data is released, let's setup the document to get values programmatically from the data based on the first and last year in the data. This could all be done inline but I sometimes find it easier to store things in a variable first to use later.
+
+## Data Calculations
+We have a function written in `functions` that takes a tibble, Jurisdiction name and a year and returns the population as a numeric value. Let's run it for the `State` and `Region` for the first and last years data and store it in variables.  
+
+First let's find the `first` and `last` year in the data we downloaded from OFM.
+
+```{r eval=FALSE, echo=TRUE}
+
+first.year <- min(ofm.pop %>% select(Year))
+last.year<- max(ofm.pop %>% select(Year))
+
+```
+
+Next let's use our `return_population_estimate` function to store the `Region` and `Statewide` population estimates for our `first` and `last` data years.
+
+```{e eval=FALSE, echo=TRUE}
+first.year.pop.region <- return_population_estimate(ofm.pop, "Region Total", first.year)
+last.year.pop.region <- return_population_estimate(ofm.pop, "Region Total", last.year)
+
+first.year.pop.state <- return_population_estimate(ofm.pop, "State Total", first.year)
+last.year.pop.state <- return_population_estimate(ofm.pop, "State Total", last.year)
+
+```
+
+And finally let's calculate the `regional share` of the statewide population in the `first` and `last` year of the data
+
+```{r, eval=FALSE, echo=TRUE}
+
+first.year.region.share <- first.year.pop.region / first.year.pop.state
+last.year.region.share <- last.year.pop.region / last.year.pop.state
+
+```
+
+### Final region_state_data working chunk
+Just in case you need the full `region_state_data` chunk, here it is to copy and paste in to your code.
+
+```{r eval=FALSE, echo=TRUE}
+
+# Determine the first and last year of the data
+first.year <- min(ofm.pop %>% select(Year))
+last.year<- max(ofm.pop %>% select(Year))
+
+# Store the state and region population data into variables using our custom function
+first.year.pop.region <- return_population_estimate(ofm.pop, "Region Total", first.year)
+last.year.pop.region <- return_population_estimate(ofm.pop, "Region Total", last.year)
+
+first.year.pop.state <- return_population_estimate(ofm.pop, "State Total", first.year)
+last.year.pop.state <- return_population_estimate(ofm.pop, "State Total", last.year)
+
+# Store the regional share of the statewide population into variables
+first.year.region.share <- first.year.pop.region / first.year.pop.state
+last.year.region.share <- last.year.pop.region / last.year.pop.state
+
+```
+
+## Line Chart of Data
+Now that we have calculated the values needed for our inline text, we can now create and display our line chart for the region and state using our `create_line_chart` function. 
+
+First we need to filter our data to only include the state and regional values
+
+```{r eval=FALSE, echo=TRUE}
+
+working.data <- ofm.pop %>%
+  filter(Jurisdiction %in% c("Region Total","State Total"))
+
+```
+
+Now that we have filtered the data down, we can create the `line chart` using our custom function.
+
+```{r eval=FALSE, echo=TRUE}
+
+total.region <- create_line_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.ltype = "solid", w.lwidth = 1.0, w.palette = psrc_colors)
+
+```
+
+### Final region_state_plot working chunk
+Just in case you need the full `region_state_plot` chunk, here it is to copy and paste in to your code
+
+```{r eval=FALSE, echo=TRUE}
+
+# Filter Data
+working.data <- ofm.pop %>%
+  filter(Jurisdiction %in% c("Region Total","State Total"))
+
+# Create Line Chart
+total.region <- create_line_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.ltype = "solid", w.lwidth = 1.0, w.palette = psrc_colors)
+
+rm(working.data)
+
+total.region
+
+```
+
+# Incorporated Area
+Now we can pull out some interesting facts on population in and out of incorporated areas from our data and display them as a stacked bar. Like previously, we will setup the document to get values programmatically from the data based on the first and last year in the data.
+
+## Data Calculations
+Using our same `return_population_estimate` function but this time we will do it for the incorporated and unincorporated areas.
+
+First for `incorporated areas`
+```{r eval=FALSE, echo=TRUE}
+
+first.year.pop.region.inc <- return_population_estimate(ofm.pop, "Incorporated Region Total", first.year)
+last.year.pop.region.inc <- return_population_estimate(ofm.pop, "Incorporated Region Total", last.year)
+
+```
+
+Next for `unincorporated areas`
+```{r eval=FALSE, echo=TRUE}
+
+first.year.pop.region.uninc <- return_population_estimate(ofm.pop, "Unincorporated Region Total", first.year)
+last.year.pop.region.uninc <- return_population_estimate(ofm.pop, "Unincorporated Region Total", last.year)
+
+```
+
+And finally let's calculate the `incporated share`
+```{r eval=FALSE, echo=TRUE}
+
+first.year.region.inc.share <- first.year.pop.region.inc / first.year.pop.region
+last.year.region.inc.share <- last.year.pop.region.inc / last.year.pop.region
+
+```
+
+### Final incorporated_data working chunk
+Just in case you need the full `incorporated_data` chunk, here it is to copy and paste in to your code.
+
+```{r eval=FALSE, echo=TRUE}
+
+# Calculate Incorporated Totals
+first.year.pop.region.inc <- return_population_estimate(ofm.pop, "Incorporated Region Total", first.year)
+last.year.pop.region.inc <- return_population_estimate(ofm.pop, "Incorporated Region Total", last.year)
+
+# Calculate Unincorporated Totals
+first.year.pop.region.uninc <- return_population_estimate(ofm.pop, "Unincorporated Region Total", first.year)
+last.year.pop.region.uninc <- return_population_estimate(ofm.pop, "Unincorporated Region Total", last.year)
+
+# Calculate the Share of Population in Incorporated Areas
+first.year.region.inc.share <- first.year.pop.region.inc / first.year.pop.region
+last.year.region.inc.share <- last.year.pop.region.inc / last.year.pop.region
+
+```
+
+## Stacked Bar Chart of Data
+Now that we have calculated the values needed for our inline text, we can now create and display our chart for the region incorporated and unincorporated areas using our `create_bar_chart` function. 
+
+First we need to filter our data to only include the regional totals by incorporated or unincorporated values.
+```{r eval=FALSE, echo=TRUE}
+
+working.data <- ofm.pop %>%
+  filter(Jurisdiction %in% c("Incorporated Region Total", "Unincorporated Region Total"))
+
+```
+
+Now that we have filtered the data down, we can create the `stacked bar chart` using our custom function.
+```{r eval=FALSE, echo=TRUE}
+
+incorporated.region <- create_bar_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.bartype = "stack", w.transparent = 1.0, w.palette = psrc_colors)
+
+```
+
+### Final incorporated_plot working chunk
+Just in case you need the full `incorporated_plot` chunk, here it is to copy and paste in to your code
+
+```{r eval=FALSE, echo=TRUE}
+
+working.data <- ofm.pop %>%
+  filter(Jurisdiction %in% c("Incorporated Region Total", "Unincorporated Region Total"))
+
+incorporated.region <- create_bar_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.bartype = "stack", w.transparent = 1.0, w.palette = psrc_colors)
+
+rm(working.data)
+
+incorporated.region
 
 ```

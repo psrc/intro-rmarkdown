@@ -58,9 +58,8 @@ ofm.pop <- ofm.pop %>%
   filter(County %in%  c(psrc_counties,"State")) %>%
   pivot_longer(cols=contains("Population"), names_to="Year", values_to="Estimate") %>%
   select(-Line) %>%
-  mutate(Year = str_replace(Year, ".Population.*", "")) %>%
-  mutate(Jurisdiction = str_replace(Jurisdiction, " \\(part\\)", "")) %>%
-  mutate_at(c('Filter','Year','Estimate'), as.numeric)
+  mutate(Year = str_replace(Year, ".Population.*", ""), Jurisdiction = str_replace(Jurisdiction, " \\(part\\)", "")) %>%
+  mutate(across(c('Filter','Year','Estimate'), as.numeric))
 
 # Create a Regional Summary by Filter Type and then Join to Full OFM tibble
 region.pop <- ofm.pop %>%
@@ -93,75 +92,72 @@ ofm.pop <- ofm.pop %>%
 file.remove(ofm.pop.file)
 rm(region.pop)
 
-# Determine a few parameters in the data
-first.year <- min(ofm.pop$Year)
-last.year<- max(ofm.pop$Year)
-
 ```
 
-```{r region_state_chart_creation, include=FALSE}
+```{r region_state_data, include=FALSE}
 
-# Population Summary Data for use in markdown text
-first.year.pop.region <- ofm.pop %>% filter(Jurisdiction == "Region Total" & Year == first.year) %>% select(Estimate) %>% as.numeric
-last.year.pop.region <- ofm.pop %>% filter(Jurisdiction == "Region Total" & Year == last.year) %>% select(Estimate) %>% as.numeric
+# Determine the first and last year of the data
+first.year <- min(ofm.pop %>% select(Year))
+last.year<- max(ofm.pop %>% select(Year))
 
-first.year.pop.state <- ofm.pop %>% filter(Jurisdiction == "State Total" & Year == first.year) %>% select(Estimate) %>% as.numeric
-last.year.pop.state <- ofm.pop %>% filter(Jurisdiction == "State Total" & Year == last.year) %>% select(Estimate) %>% as.numeric
+# Store the state and region population data into variables using our custom function
+first.year.pop.region <- return_population_estimate(ofm.pop, "Region Total", first.year)
+last.year.pop.region <- return_population_estimate(ofm.pop, "Region Total", last.year)
 
+first.year.pop.state <- return_population_estimate(ofm.pop, "State Total", first.year)
+last.year.pop.state <- return_population_estimate(ofm.pop, "State Total", last.year)
+
+# Store the regional share of the statewide population into variables
 first.year.region.share <- first.year.pop.region / first.year.pop.state
 last.year.region.share <- last.year.pop.region / last.year.pop.state
-
-# Create Line Chart for Region and State Population
-current.filter <- c(1,100)
-current.county <- c("Region","State")
-
-working.data <- ofm.pop %>%
-  filter(Filter %in% current.filter & County %in% current.county)
-
-total.region <- create_line_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.ltype = "solid", w.lwidth = 1.0, w.palette = psrc_colors)
-
-rm(working.data)
 
 ```
 
 # Regional Population
 The population of the PSRC region totaled more than **`r toString(first.year.pop.region)`** people in `r toString(first.year)`. By `r toString(last.year)`, the total population of the region had grown to more than **`r toString(round(last.year.pop.region, -2))`** people, an increase of **`r toString(format(round(last.year.pop.region - first.year.pop.region, -1), nsmall=0, big.mark=","))`** people over `r toString(last.year - first.year)` years. More than *`r toString(round(last.year.region.share*100, 0))`%* of the State of Washington called the Puget Sound Region home in `r toString(last.year)`.
 
-```{r plot_region_state_chart, echo=TRUE}
+```{r region_state_plot, echo=FALSE, warning=FALSE}
+
+# Filter Data
+working.data <- ofm.pop %>%
+  filter(Jurisdiction %in% c("Region Total","State Total"))
+
+# Create Line Chart
+total.region <- create_line_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.ltype = "solid", w.lwidth = 1.0, w.palette = psrc_colors)
+
+rm(working.data)
 
 total.region
 
 ```
 
+```{r incorporated_data, include=FALSE}
 
-```{r region_incorporated_population_chart_creation, include=FALSE}
+# Calculate Incorporated Totals
+first.year.pop.region.inc <- return_population_estimate(ofm.pop, "Incorporated Region Total", first.year)
+last.year.pop.region.inc <- return_population_estimate(ofm.pop, "Incorporated Region Total", last.year)
 
-# Population Summary Data for use in markdown text
-first.year.pop.region.inc <- ofm.pop %>% filter(Jurisdiction == "Incorporated Region Total" & Year == first.year) %>% select(Estimate) %>% as.numeric
-last.year.pop.region.inc <- ofm.pop %>% filter(Jurisdiction == "Incorporated Region Total" & Year == last.year) %>% select(Estimate) %>% as.numeric
+# Calculate Unincorporated Totals
+first.year.pop.region.uninc <- return_population_estimate(ofm.pop, "Unincorporated Region Total", first.year)
+last.year.pop.region.uninc <- return_population_estimate(ofm.pop, "Unincorporated Region Total", last.year)
 
-first.year.pop.region.uninc <- ofm.pop %>% filter(Jurisdiction == "Unincorporated Region Total" & Year == first.year) %>% select(Estimate) %>% as.numeric
-last.year.pop.region.uninc <- ofm.pop %>% filter(Jurisdiction == "Unincorporated Region Total" & Year == last.year) %>% select(Estimate) %>% as.numeric
-
+# Calculate the Share of Population in Incorporated Areas
 first.year.region.inc.share <- first.year.pop.region.inc / first.year.pop.region
 last.year.region.inc.share <- last.year.pop.region.inc / last.year.pop.region
 
-# Create Stacked Bar for Incorporated/Unincorporated Population
-current.filter <- c(2,3)
-current.county <- c("Region")
+```
+
+## Incorporated Area Population 
+In `r toString(first.year)`, approximately *`r toString(round(first.year.region.inc.share*100, 0))`%* of the regional population lived in our region's vibrant cities and towns. By `r toString(last.year)` the share of population in cities and towns had grown to *`r toString(round(last.year.region.inc.share*100, 0))`%*, accounting for more than **`r toString(format(round(last.year.pop.region.inc, -2), nsmall=0, big.mark=","))`** people living in the region's incorporated places.
+
+```{r incorporated_plot, echo=FALSE, warning=FALSE}
 
 working.data <- ofm.pop %>%
-  filter(Filter %in% current.filter & County %in% current.county)
+  filter(Jurisdiction %in% c("Incorporated Region Total", "Unincorporated Region Total"))
 
 incorporated.region <- create_bar_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.bartype = "stack", w.transparent = 1.0, w.palette = psrc_colors)
 
 rm(working.data)
-
-```
-## Incorporated Area Population 
-In `r toString(first.year)`, approximately *`r toString(round(first.year.region.inc.share*100, 0))`%* of the regional population lived in our region's vibrant cities and towns. By `r toString(last.year)` the share of population in cities and towns had grown to *`r toString(round(last.year.region.inc.share*100, 0))`%*, accounting for more than **`r toString(format(round(last.year.pop.region.inc, -2), nsmall=0, big.mark=","))`** people living in the region's incorporated places.
-
-```{r plot_region_incorporated_chart, echo=FALSE}
 
 incorporated.region
 
