@@ -807,6 +807,85 @@ region.cities</code></pre>
 </div>
 </div>
 </div>
+<div id="county-child" class="section level1">
+<h1>County Child</h1>
+<p>What if we want to summarize the data for each County in the same way we just did for the region? We could simply copy and paste the code from the region another four times but that will make the document long, takes a lot of time but more importantly what if we make a small tweak to a code chunk? We would have to change it in multiple places. This is where the concept of a <code>child</code> in <code>knitr</code> comes in. Think of a <code>child</code> as a function that creates your output. We can iterate over a list and run the <code>child</code> code on each of those. Now if we want to add 2, 3, 6 or 10 counties to our summary we can do it with any adjustment to our list, not with new code!</p>
+<p>Let’s start with writing our <code>child</code> and then we can work on the list creation. A <code>child</code> in markdown is a seperate file (think of our <code>source</code> example from earlier). I provided a template for us to use in the class documents called <code>ofm_trend_county_child.Rmd</code>. Go ahead and open that file in RStudio now.</p>
+<div id="data-calculations-3" class="section level2">
+<h2>Data Calculations</h2>
+<p>We are going to structure our child to re-create the data we saw for the region:</p>
+<ol style="list-style-type: decimal">
+<li>County Total</li>
+<li>Population in Incorporated Areas</li>
+<li>Population of Cities by County</li>
+</ol>
+<p>First let’s get some county level summary data for our text using that same <code>return_population_estimate</code> function we used before.</p>
+<pre class="r"><code>first.year.pop.county &lt;- return_population_estimate(ofm.pop, paste0(current.county, &quot; County&quot;), first.year)
+last.year.pop.county &lt;- return_population_estimate(ofm.pop, paste0(current.county, &quot; County&quot;), last.year)</code></pre>
+<p>Now let’s create our County Line Chart by <code>filtering</code> to our current county and running the <code>create_line_chart</code> function. I decided to change the <code>line type</code> in this to be <code>twodash</code>.</p>
+<pre class="r"><code>working.data &lt;- ofm.pop %&gt;%
+  filter(Jurisdiction == paste0(current.county, &quot; County&quot;))
+
+total.county &lt;- create_line_chart(working.data, &quot;Year&quot;, &quot;Estimate&quot;, &quot;Jurisdiction&quot;, &quot;twodash&quot;, 1.5, psrc_colors)</code></pre>
+<p>Now let’s create our stacked bar chart for incorporated/unincorporated areas.</p>
+<pre class="r"><code>working.data &lt;- ofm.pop %&gt;%
+  filter(Jurisdiction %in% c(paste0(&quot;Incorporated &quot;,current.county, &quot; County&quot;), paste0(&quot;Unincorporated &quot;,current.county, &quot; County&quot;)))
+
+incorporation.county &lt;- create_bar_chart(working.data, &quot;Year&quot;, &quot;Estimate&quot;, &quot;Jurisdiction&quot;, &quot;stack&quot;, 1.0, psrc_colors, &quot;continuous&quot;)</code></pre>
+<p>And finally let’s create the fact charts for city population in our specific county.</p>
+<pre class="r"><code>working.data &lt;- ofm.pop %&gt;%
+  filter(Filter ==4 &amp; County == current.county &amp; Year == last.year) %&gt;% arrange(desc(Estimate))
+
+county.cities &lt;- create_facet_bar_chart(working.data, &quot;Jurisdiction&quot;, &quot;Estimate&quot; , &quot;Jurisdiction&quot;, &quot;PopRange&quot;, &quot;free&quot;)</code></pre>
+<div id="final-ofm_trend_county_child-working-chunk" class="section level3">
+<h3>Final ofm_trend_county_child working chunk</h3>
+<p>We now have all the pieces to work with to create our county specific figures. Here is all thee code in one place to copy and paste if needed</p>
+<pre class="r"><code># Population Summary Data for use in markdown text
+first.year.pop.county &lt;- return_population_estimate(ofm.pop, paste0(current.county, &quot; County&quot;), first.year)
+last.year.pop.county &lt;- return_population_estimate(ofm.pop, paste0(current.county, &quot; County&quot;), last.year)
+
+# Create Line Chart for Total County Population
+working.data &lt;- ofm.pop %&gt;%
+  filter(Jurisdiction == paste0(current.county, &quot; County&quot;))
+
+total.county &lt;- create_line_chart(working.data, &quot;Year&quot;, &quot;Estimate&quot;, &quot;Jurisdiction&quot;, &quot;twodash&quot;, 1.5, psrc_colors)
+
+# Create Stacked Bar Chart for County Population by Incorporated/Unincorporated Population
+working.data &lt;- ofm.pop %&gt;%
+  filter(Jurisdiction %in% c(paste0(&quot;Incorporated &quot;,current.county, &quot; County&quot;), paste0(&quot;Unincorporated &quot;,current.county, &quot; County&quot;)))
+
+incorporation.county &lt;- create_bar_chart(working.data, &quot;Year&quot;, &quot;Estimate&quot;, &quot;Jurisdiction&quot;, &quot;stack&quot;, 1.0, psrc_colors, &quot;continuous&quot;)
+
+# Create Bar Chart for City Population by County
+working.data &lt;- ofm.pop %&gt;%
+  filter(Filter ==4 &amp; County == current.county &amp; Year == last.year) %&gt;%
+  arrange(desc(Estimate))
+
+county.cities &lt;- create_facet_bar_chart(working.data, &quot;Jurisdiction&quot;, &quot;Estimate&quot; , &quot;Jurisdiction&quot;, &quot;PopRange&quot;, &quot;free&quot;)</code></pre>
+</div>
+</div>
+<div id="knit-our-county-list" class="section level2">
+<h2>Knit our County List</h2>
+<p>Now that we have our <code>child</code> created and saved, let’s create the list to run to create the county by county summary. <code>knitr</code> will run the child we document we call for every item in our list. It basically returns a list of our output that we store in a variable <code>out</code> to show. Here is the code we will run to finish off our document</p>
+<pre class="r"><code>out &lt;- NULL
+
+for (current.county in psrc_counties) {
+  out &lt;- c(out, knit_child(&quot;ofm_trend_county_child.Rmd&quot;))
+}</code></pre>
+<div id="add-thurston-county" class="section level3">
+<h3>Add Thurston County</h3>
+<p>Try out the functionality of our approach. Let’s add <code>Thurston County</code> to our region and re-run things to see what happens. To do this, adjust <code>psrc_counties</code> to include Thurston COunty and then <code>knit</code>. Here is the code change:</p>
+<pre class="r"><code>psrc_counties &lt;- c(&quot;King&quot;,&quot;Kitsap&quot;,&quot;Pierce&quot;,&quot;Snohomish&quot;, &quot;Thurston&quot;)</code></pre>
+</div>
+</div>
+</div>
+<div id="the-end" class="section level1">
+<h1>The End</h1>
+<p>This is the end, beautiful friend. This is the end, my only friend the end. I hope you have enjoyed it and it inspires you to try and create many more <strong>R Markdown</strong> documents! If you ever want help, just let me know.</p>
+<p>My office hours are:</p>
+<p><strong>Craig’ R Office Hours</strong>: every Wednesday from 12pm to 1pm</p>
+<p>Make an appointment ahead of time or simply drop me a Teams chat and we can work together on any and all things <strong>R</strong>!</p>
+</div>
 
 
 

@@ -5,29 +5,6 @@ output: html_document
 
 ```{r, include=FALSE}
 
-# Population Summary Data for use in markdown text
-first.year.pop.county <- return_population_estimate(ofm.pop, paste0(current.county, " County"), first.year)
-last.year.pop.county <- return_population_estimate(ofm.pop, paste0(current.county, " County"), last.year)
-
-# Create Line Chart for Total County Population
-working.data <- ofm.pop %>%
-  filter(Jurisdiction == paste0(current.county, " County"))
-
-total.county <- create_line_chart(working.data, "Year", "Estimate", "Jurisdiction", "twodash", 1.5, psrc_colors)
-
-# Create Stacked Bar Chart for County Population by Incorporated/Unincorporated Population
-working.data <- ofm.pop %>%
-  filter(Jurisdiction %in% c(paste0("Incorporated ",current.county, " County"), paste0("Unincorporated ",current.county, " County")))
-
-incorporation.county <- create_bar_chart(working.data, "Year", "Estimate", "Jurisdiction", "stack", 1.0, psrc_colors, "continuous")
-
-# Create Bar Chart for City Population by County
-working.data <- ofm.pop %>%
-  filter(Filter ==4 & County == current.county & Year == last.year) %>%
-  arrange(desc(Estimate))
-
-county.cities <- create_facet_bar_chart(working.data, "Jurisdiction", "Estimate" , "Jurisdiction", "PopRange", "free")
-
 ```
 
 ## `r paste0(current.county," County")`

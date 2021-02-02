@@ -681,3 +681,112 @@ rm(working.data)
 region.cities
 
 ```
+
+# County Child
+What if we want to summarize the data for each County in the same way we just did for the region? We could simply copy and paste the code from the region another four times but that will make the document long, takes a lot of time but more importantly what if we make a small tweak to a code chunk? We would have to change it in multiple places. This is where the concept of a `child` in `knitr` comes in. Think of a `child` as a function that creates your output. We can iterate over a list and run the `child` code on each of those. Now if we want to add 2, 3, 6 or 10 counties to our summary we can do it with any adjustment to our list, not with new code!  
+
+Let's start with writing our `child` and then we can work on the list creation. A `child` in markdown is a seperate file (think of our `source` example from earlier). I provided a template for us to use in the class documents called `ofm_trend_county_child.Rmd`. Go ahead and open that file in RStudio now.
+
+## Data Calculations
+We are going to structure our child to re-create the data we saw for the region:
+
+1. County Total
+2. Population in Incorporated Areas
+3. Population of Cities by County
+
+First let's get some county level summary data for our text using that same `return_population_estimate` function we used before.
+```{r eval=FALSE, echo=TRUE}
+
+first.year.pop.county <- return_population_estimate(ofm.pop, paste0(current.county, " County"), first.year)
+last.year.pop.county <- return_population_estimate(ofm.pop, paste0(current.county, " County"), last.year)
+
+```
+
+Now let's create our County Line Chart by `filtering` to our current county and running the `create_line_chart` function. I decided to change the `line type` in this to be `twodash`.
+```{r eval=FALSE, echo=TRUE}
+
+working.data <- ofm.pop %>%
+  filter(Jurisdiction == paste0(current.county, " County"))
+
+total.county <- create_line_chart(working.data, "Year", "Estimate", "Jurisdiction", "twodash", 1.5, psrc_colors)
+
+```
+
+Now let's create our stacked bar chart for incorporated/unincorporated areas.
+```{r eval=FALSE, echo=TRUE}
+
+working.data <- ofm.pop %>%
+  filter(Jurisdiction %in% c(paste0("Incorporated ",current.county, " County"), paste0("Unincorporated ",current.county, " County")))
+
+incorporation.county <- create_bar_chart(working.data, "Year", "Estimate", "Jurisdiction", "stack", 1.0, psrc_colors, "continuous")
+
+```
+
+And finally let's create the fact charts for city population in our specific county.
+```{r eval=FALSE, echo=TRUE}
+
+working.data <- ofm.pop %>%
+  filter(Filter ==4 & County == current.county & Year == last.year) %>% arrange(desc(Estimate))
+
+county.cities <- create_facet_bar_chart(working.data, "Jurisdiction", "Estimate" , "Jurisdiction", "PopRange", "free")
+
+```
+
+### Final ofm_trend_county_child working chunk
+We now have all the pieces to work with to create our county specific figures. Here is all thee code in one place to copy and paste if needed
+
+```{r, eval=FALSE, echo=TRUE}
+
+# Population Summary Data for use in markdown text
+first.year.pop.county <- return_population_estimate(ofm.pop, paste0(current.county, " County"), first.year)
+last.year.pop.county <- return_population_estimate(ofm.pop, paste0(current.county, " County"), last.year)
+
+# Create Line Chart for Total County Population
+working.data <- ofm.pop %>%
+  filter(Jurisdiction == paste0(current.county, " County"))
+
+total.county <- create_line_chart(working.data, "Year", "Estimate", "Jurisdiction", "twodash", 1.5, psrc_colors)
+
+# Create Stacked Bar Chart for County Population by Incorporated/Unincorporated Population
+working.data <- ofm.pop %>%
+  filter(Jurisdiction %in% c(paste0("Incorporated ",current.county, " County"), paste0("Unincorporated ",current.county, " County")))
+
+incorporation.county <- create_bar_chart(working.data, "Year", "Estimate", "Jurisdiction", "stack", 1.0, psrc_colors, "continuous")
+
+# Create Bar Chart for City Population by County
+working.data <- ofm.pop %>%
+  filter(Filter ==4 & County == current.county & Year == last.year) %>%
+  arrange(desc(Estimate))
+
+county.cities <- create_facet_bar_chart(working.data, "Jurisdiction", "Estimate" , "Jurisdiction", "PopRange", "free")
+
+```
+
+## Knit our County List
+Now that we have our `child` created and saved, let's create the list to run to create the county by county summary. `knitr` will run the child we document we call for every item in our list. It basically returns a list of our output that we store in a variable `out` to show. Here is the code we will run to finish off our document
+
+```{r eval=FALSE, echo=TRUE}
+out <- NULL
+
+for (current.county in psrc_counties) {
+  out <- c(out, knit_child("ofm_trend_county_child.Rmd"))
+}
+
+```
+
+### Add Thurston County
+Try out the functionality of our approach. Let's add `Thurston County` to our region and re-run things to see what happens. To do this, adjust `psrc_counties` to include Thurston COunty and then `knit`. Here is the code change:
+```{r eval=FALSE, echo=TRUE}
+
+psrc_counties <- c("King","Kitsap","Pierce","Snohomish", "Thurston")
+
+```
+
+# The End
+This is the end, beautiful friend. This is the end, my only friend the end. I hope you have enjoyed it and it inspires you to try and create many more **R Markdown** documents! If you ever want help, just let me know.  
+
+My office hours are:
+
+**Craig' R Office Hours**: every Wednesday from 12pm to 1pm
+
+Make an appointment ahead of time or simply drop me a Teams chat and we can work together on any and all things **R**!
