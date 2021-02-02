@@ -252,7 +252,7 @@ ofm.pop <- ofm.pop %>%
 
 ```
 
-Getting closer! The `Year` column from OFM is really long and we only want the integer that represents the actual year year so we can use it for plotting and summarizing. This is where `stringr` is great - it makes pattern recognition and string replacement a snap! At the same time, let's use it to get rid of the word `(part)` in the Jurisdicition label - we want Bothell to be Bothell since we have the county identifier already.
+Getting closer! The `Year` column from OFM is really long and we only want the integer that represents the actual year year so we can use it for plotting and summarizing. This is where `stringr` is great - it makes pattern recognition and string replacement a snap! At the same time, let's use it to get rid of the word `(part)` in the Jurisdiction label - we want Bothell to be Bothell since we have the county identifier already.
     
 ```{r eval=FALSE, echo=TRUE}
 

@@ -155,11 +155,58 @@ In `r toString(first.year)`, approximately *`r toString(round(first.year.region.
 working.data <- ofm.pop %>%
   filter(Jurisdiction %in% c("Incorporated Region Total", "Unincorporated Region Total"))
 
-incorporated.region <- create_bar_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.bartype = "stack", w.transparent = 1.0, w.palette = psrc_colors)
+incorporated.region <- create_bar_chart(w.data = working.data, w.x = "Year", w.y = "Estimate", w.color = "Jurisdiction", w.bartype = "stack", w.transparent = 1.0, w.palette = psrc_colors, x.type = "continuous")
 
 rm(working.data)
 
 incorporated.region
+
+```
+
+## Cities by Size in `r toString(last.year)`
+
+```{r cities_data, echo=FALSE, warning=FALSE}
+
+# Filter to Cities
+working.data <- ofm.pop %>%
+  filter(Filter ==4 & Year == last.year) %>%
+  arrange(desc(Estimate))
+
+# There are some places (Auburn, Bothell, etc.) that are in two counties so we should aggregate to get to one line per city
+working.data <- working.data %>%
+  select(Jurisdiction, Estimate) %>%
+  group_by(Jurisdiction) %>%
+  summarize_all(sum) %>%
+  mutate(PopRange = case_when(
+    Estimate < 5000 ~ 1,
+    Estimate >= 5000 & Estimate <10000 ~ 2,
+    Estimate >= 10000 & Estimate < 25000 ~ 3,
+    Estimate >= 25000 & Estimate < 50000 ~ 4,
+    Estimate >= 50000 & Estimate < 75000 ~ 5,
+    Estimate >= 75000 ~ 6) %>%
+  as.factor() %>%
+    structure(levels = c("less than 5k","5k to 10k","10k to 25k","25k to 50k", "50k to 75k", "more than 75k"))
+  )
+
+num.juris <- working.data %>% select(Jurisdiction) %>% count() %>% as.numeric
+biggest.city <- working.data %>% filter(Estimate == max(Estimate)) %>% select(Jurisdiction) %>% as.character
+biggest.pop <- working.data %>% filter(Estimate == max(Estimate)) %>% select(Estimate) %>% as.numeric
+
+smallest.city <- working.data %>% filter(Estimate == min(Estimate)) %>% select(Jurisdiction) %>% as.character
+smallest.pop <- working.data %>% filter(Estimate == min(Estimate)) %>% select(Estimate) %>% as.numeric
+
+```
+
+There are `r toString(num.juris)` cities and towns in the PSRC region. The largest city in `r toString(last.year)` was `r biggest.city` with a population of approximately **`r toString(format(round(biggest.pop, -2), nsmall=0, big.mark=","))`** people. The smallest place in the region in `r toString(last.year)` was the Town of `r smallest.city` with around **`r toString(format(round(smallest.pop, -1), nsmall=0, big.mark=","))`** people.
+
+```{r cities_plot, echo=FALSE, warning=FALSE}
+# Create a Plot for Cities
+
+region.cities <- create_facet_bar_chart(working.data, "Jurisdiction", "Estimate" , "Jurisdiction", "PopRange", "free")
+
+rm(working.data)
+
+region.cities
 
 ```
 

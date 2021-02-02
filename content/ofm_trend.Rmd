@@ -75,6 +75,20 @@ In `r toString(first.year)`, approximately *`r toString(round(first.year.region.
 
 ```
 
+## Cities by Size in `r toString(last.year)`
+
+```{r cities_data, echo=FALSE, warning=FALSE}
+
+
+```
+
+There are `r toString(num.juris)` cities and towns in the PSRC region. The largest city in `r toString(last.year)` was `r biggest.city` with a population of approximately **`r toString(format(round(biggest.pop, -2), nsmall=0, big.mark=","))`** people. The smallest place in the region in `r toString(last.year)` was the Town of `r smallest.city` with around **`r toString(format(round(smallest.pop, -1), nsmall=0, big.mark=","))`** people.
+
+```{r cities_plot, echo=FALSE, warning=FALSE}
+
+
+```
+
 # County Population {.tabset}
 There are `r length(psrc_counties)` counties that make up the Puget Sound Region and they are **`r psrc_counties`** counties. The population distribution of the `r length(psrc_counties)` counties are shown below:<br><br>
 
