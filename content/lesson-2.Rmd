@@ -77,11 +77,12 @@ When we `source`a file, we are effectively telling R to run that file and make a
 2. psrc_palette.R
 
 #### Functions
-The `functions.R` file has four custom functions that were written to create:
-1. A line chart
-2. Bar Chart
-3. Facet Wrapped Bar Chart
-4. Return an estimated value from a tibble  
+The `functions.R` file has four custom functions that were written to create:  
+
+* A line chart
+* Bar Chart
+* Facet Wrapped Bar Chart
+* Return an estimated value from a tibble  
 
 I write functions like this so that I can make my charts and figures look consistent without having to keep copying and pasting things. Remember the golden rule on functions - if you copy the same line more than twice, write a function instead! Let's open `funcitons.R` in RStudio so you can see what it looks like using:  
 ![](3_ofm_open_functions.png){width=35%}   
