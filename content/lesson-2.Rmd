@@ -77,7 +77,7 @@ When we `source`a file, we are effectively telling R to run that file and make a
 2. psrc_palette.R
 
 #### Functions
-The `functions.R` file has two custom functions that were written to create a line and bar chart using ggplot2. I write functions like this so that I can make my charts and figures look consistent without having to keep copying and pasting things. Remember the golden rule on functions - if you copy the same line more than twice, write a function instead! Let's open `funcitons.R` in RStudio so you can see what it looks like using:  
+The `functions.R` file has three custom functions that were written to create a line and bar chart using ggplot2 and return an estimated value from a tibble. I write functions like this so that I can make my charts and figures look consistent without having to keep copying and pasting things. Remember the golden rule on functions - if you copy the same line more than twice, write a function instead! Let's open `funcitons.R` in RStudio so you can see what it looks like using:  
 ![](3_ofm_open_functions.png){width=35%}   
 
 I have also placed the code here as well:
@@ -219,7 +219,7 @@ Base R's function `download.file` can be used to copy a file from an url to a lo
 
 ```{r ofm_data_prep, eval=FALSE, echo=TRUE}
 
-download.file(url = ofm.url, destfile = "working.xlsx", quiet = FALSE, mode = "wb")
+download.file(url = ofm.url, destfile = "working.xlsx", quiet = TRUE, mode = "wb")
 ofm.pop.file <- paste0(getwd(),"/working.xlsx")
 ofm.pop <- as_tibble(read.xlsx(ofm.pop.file, detectDates = TRUE, skipEmptyRows = TRUE, startRow = 5, colNames = TRUE))
 
@@ -277,7 +277,7 @@ Now that we stepped through all that, let's go ahead and copy and paste the foll
 
 # This code chunk will download the OFM file from the web, put a temp copy on your hard drive, clean it up for analysis and then remove the temporary file afterwards.
 
-download.file(ofm.url, "working.xlsx", quiet = FALSE, mode = "wb")
+download.file(ofm.url, "working.xlsx", quiet = TRUE, mode = "wb")
 ofm.pop.file <- paste0(getwd(),"/working.xlsx")
 
 ofm.pop <- as_tibble(read.xlsx(ofm.pop.file, detectDates = TRUE, skipEmptyRows = TRUE, startRow = 5, colNames = TRUE))

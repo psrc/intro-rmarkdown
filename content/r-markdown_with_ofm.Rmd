@@ -48,7 +48,7 @@ This document was created using R Markdown. Markdown is a simple formatting synt
 
 # This code chunk will download the OFM file from the web, put a temp copy on your hard drive, clean it up for analysis and then remove the temporary file afterwards.
 
-download.file(ofm.url, "working.xlsx", quiet = FALSE, mode = "wb")
+download.file(ofm.url, "working.xlsx", quiet = TRUE, mode = "wb")
 ofm.pop.file <- paste0(getwd(),"/working.xlsx")
 
 ofm.pop <- as_tibble(read.xlsx(ofm.pop.file, detectDates = TRUE, skipEmptyRows = TRUE, startRow = 5, colNames = TRUE))
